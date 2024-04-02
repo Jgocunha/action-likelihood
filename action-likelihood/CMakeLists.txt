@@ -54,6 +54,10 @@ target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC
     PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
+# Setup coppeliasim-cpp-client
+find_package(coppeliasim-cpp-client REQUIRED)
+target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE coppeliasim-cpp-client)
+
 target_compile_definitions(${CMAKE_PROJECT_NAME} PUBLIC
                             ACTION_LIKELIHOOD_PROJ=1
                             ACTION_LIKELIHOOD_PROJ_VERSION_MAJOR=${ACTION_LIKELIHOOD_PROJ_VERSION_MAJOR}
@@ -89,3 +93,4 @@ install(EXPORT ${CMAKE_PROJECT_NAME}Targets DESTINATION ${ACTION_LIKELIHOOD_PROJ
 set(EXE_PROJECT ${CMAKE_PROJECT_NAME}-exe)
 add_executable(${EXE_PROJECT} "src/main.cpp")
 target_include_directories(${EXE_PROJECT} PRIVATE include)
+target_link_libraries(${EXE_PROJECT} PRIVATE coppeliasim-cpp-client)

@@ -2,11 +2,12 @@
 
 // PVS-Studio Static Code Analyzer for C, C++, C#, and Java: https://pvs-studio.com
 
-
 #include <iostream>
 #include <vector>
 #include <cmath>
 #include <numbers>
+
+#include "client.h"
 
 struct Position
 {
@@ -48,14 +49,41 @@ double calculateLikelihood(const Position& handPos, const Position& handPosPrev,
 
 int main()
 {
-    constexpr Position handCurrent = { 3.0, 4.0, 1.0 }; // Current hand position
-    constexpr Position handPrevious = { 3.0, 3.9, 0.98 }; // Previous hand position (to calculate velocity)
-    constexpr Position component = { 3.0, 4.0, 1.0 }; // Position of a component (static)
-    constexpr double tau = 0.1; // Time constant
-    constexpr double sigma = 0.2; // Uncertainty
+    try
+    {
+        coppeliasim_cpp::CoppeliaSimClient client;
+        client.setLogMode(coppeliasim_cpp::LogMode::LOG_CMD);
 
-    const double likelihood = calculateLikelihood(handCurrent, handPrevious, component, tau, sigma);
-    std::cout << "Likelihood: " << likelihood << std::endl;
+        while (!client.initialize());
 
-    return 0;
+        client.startSimulation();
+        constexpr Position component = { 0.0, 0.0, 0.85107 }; // Position of a component (static)
+        constexpr double tau = 0.1; // Time constant
+        constexpr double sigma = 0.2; // Uncertainty
+        const int handHandle = client.getObjectHandle("hand");
+        coppeliasim_cpp::Position handPrevious = client.getObjectPosition(handHandle);
+
+        while(client.isConnected())
+        {
+            const coppeliasim_cpp::Position handCurrent = client.getObjectPosition(handHandle);
+            //std::cout << "Hand position: " << handCurrent.x << ", " << handCurrent.y << ", " << handCurrent.z << std::endl;
+
+            const double likelihood = calculateLikelihood({handCurrent.x, handCurrent.y, handCurrent.z}, { handPrevious.x, handPrevious.y, handPrevious.z }, component, tau, sigma);
+			std::cout << "Likelihood: " << likelihood << std::endl;
+
+            handPrevious = handCurrent;
+        }
+
+        return 0;
+    }
+	catch (const std::exception& e)
+	{
+		std::cerr << e.what() << std::endl;
+        return 1;
+	}
+    catch (...)
+    {
+    	std::cerr << "An unknown error occurred." << std::endl;
+		return 1;
+	}
 }
